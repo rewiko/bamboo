@@ -18,13 +18,15 @@ type Task struct {
 
 // An app may have multiple processes
 type App struct {
-	Id              string
-	EscapedId       string
-	HealthCheckPath string
-	Tasks           []Task
-	ServicePort     int
-	ServicePorts    []int
-	Env             map[string]string
+	Id                  string
+	EscapedId           string
+	IdDomain            string
+	IsBackend           bool
+	HealthCheckPath     string
+	Tasks               []Task
+	ServicePort         int
+	ServicePorts        []int
+	Env                 map[string]string
 }
 
 type AppList []App
@@ -169,13 +171,22 @@ func createApps(tasksById map[string][]MarathonTask, marathonApps map[string]Mar
 		if !strings.HasPrefix(appId, "/") {
 			appPath = "/" + appId
 		}
+        var IsBackend = false
+
+        if strings.HasPrefix(appId, "/back") {
+			IsBackend = true
+		} else {
+			IsBackend = false
+        }
 
 		app := App{
 			// Since Marathon 0.7, apps are namespaced with path
 			Id: appPath,
 			// Used for template
 			EscapedId:       strings.Replace(appId, "/", "::", -1),
-			Tasks:           simpleTasks,
+			IdDomain:        strings.Replace(appId, "/", "-", 0)[1:len(appId)],
+			IsBackend:       IsBackend,
+            Tasks:           simpleTasks,
 			HealthCheckPath: parseHealthCheckPath(marathonApps[appId].HealthChecks),
 			Env:             marathonApps[appId].Env,
 		}
